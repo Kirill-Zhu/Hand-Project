@@ -88,7 +88,7 @@ public class HandsHDRController : MonoBehaviour
         {
             _currentHandAlpha = _handsStartAlpha;
             _currentHand.color = new Color(_currentHand.color.r, _currentHand.color.g, _currentHand.color.b, _currentHandAlpha);
-            _currentHand.transform.localScale = new Vector3(1, 1, 1);
+           // _currentHand.transform.localScale = new Vector3(1, 1, 1);
             StopCoroutine(_coroutine);
             _coroutine = null;
 

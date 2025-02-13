@@ -42,8 +42,8 @@ public class Display2AnimationController : MonoBehaviour
 
         _scanningProcesshandObj.GetComponent<Image>().sprite = _hands[handIndex];
 
-        sideModificator = _rightLeftHandRandom[Random.Range(0, _rightLeftHandRandom.Length)];
-
+        // sideModificator = _rightLeftHandRandom[Random.Range(0, _rightLeftHandRandom.Length)];
+        sideModificator = 1;
         var tmpScale = _scanningProcesshandObj.transform.localScale;
         tmpScale.x = sideModificator;
         _scanningProcesshandObj.transform.localScale = tmpScale;

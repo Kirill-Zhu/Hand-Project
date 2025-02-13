@@ -19,6 +19,8 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     private float _lerpValueModifier = -1;
     public float _lerpValue;
     private float _previousLerpValue;
+    public bool FirstHandIsKeepTouching{ get { return _firstHandIsKeepTouching; } }
+    private bool _firstHandIsKeepTouching=false;
     private void Start()
     {
         foreach (var anim in _animators)
@@ -40,6 +42,7 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     }
     public void OnPointerDown(PointerEventData eventData)
     {
+        _firstHandIsKeepTouching = true;
         if (_canScan)
         {
             foreach (var anim in _animators)
@@ -50,6 +53,7 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     }
     public void OnPointerExit(PointerEventData eventData)
     {
+        _firstHandIsKeepTouching = false;
         foreach (var anim in _animators)
             anim.SetBool("IsScanning", false);
         MinusTModifier();
@@ -93,14 +97,14 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     }
     private void PlusTModifier()
     {
-#if UNITY_EDITOR
-        if (_canScan)
-        {
-            _lerpValue = 0.05f;
-            _lerpValueModifier = 1;
-        }
-#endif
-#if UNITY_STANDALONE
+//#if UNITY_EDITOR
+//        if (_canScan)
+//        {
+//            _lerpValue = 0.05f;
+//            _lerpValueModifier = 1;
+//        }
+//#endif
+//#if UNITY_STANDALONE
 
         if (CanScan && SecondHandIsKeepTouching)
         {
@@ -110,9 +114,26 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
                 _lerpValueModifier = 1;
             }
         }
-#endif
+//#endif
 
+     }
+    public void TryScan()
+    {
+        if (_canScan)
+        {
+            foreach (var anim in _animators)
+                anim.SetBool("IsScanning", true);
+
+            PlusTModifier();
+        }
     }
+    public void DonstScan()
+    {
+        foreach (var anim in _animators)
+            anim.SetBool("IsScanning", false);
+        MinusTModifier();
+    }
+
 
 
 }
