@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Burst;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 using UnityEngine.UI;
 using Zenject;
-public class Display2AnimationController : MonoBehaviour
-{
+[BurstCompile]
+public class Display2AnimationController : MonoBehaviour {
     public float handFadeInSpeed = 1;
     public float handMoveSpeed = 1;
     public float timeToDestroyHand = 1;
@@ -17,107 +19,137 @@ public class Display2AnimationController : MonoBehaviour
     [Header("Sucsecc Scanning properties")]
     [SerializeField] private GameObject _handPrefab;
     [SerializeField] private List<Sprite> _hands;
-    [SerializeField] private List<Transform> _blackHandsTransform;// index 0
-    [SerializeField] private List<Transform> _redHandsTransform;//index 1
-    [SerializeField] private List<Transform> _whiteHandsTransform;// index 2
+    
+    [Header("Hand Transform")]
+    [Space(10)]
+    
+    [SerializeField] private List<RectTransform> _blackHandsTransform;// index 0
+    [SerializeField] private List<RectTransform> _redHandsTransform;//index 1
+    [SerializeField] private List<RectTransform> _whiteHandsTransform;// index 2
+
+    [Header("Hands Rotation")]
+    [Space(10)]
+    [SerializeField] private List<Vector3> _blackHandRotationList;
+    [SerializeField] private List<Vector3> _redHandsRotationList;
+    [SerializeField] private List<Vector3> _whiteHandsRotationList;
+
+
     private int _handIndex;
     private Vector3 _handStartPoint;
-    private Transform _handFinishPoint;
-    private Vector3 _handStartScale;
-    private Vector3 _handeFinisScale = new Vector3(0.2f, 0.2f, 0.2f);
+    private RectTransform _handFinishPoint;
+    [SerializeField] private Vector3 _handStartScale;
+    private Vector3 _handFinisScale = new Vector3(0.2f, 0.2f, 0.2f);
+    private Vector3 _handStartLocalEulerAngles;
+    private Vector3 _handFinishLocalEulerAngles;
     private CanvasGroup _handCanvasGroup;
     private Coroutine _coroutine;
     private GameObject _handObject;
     public float _tLerp = 0;
     private int[] _rightLeftHandRandom = new int[] { -1, 1 };
-    private int sideModificator;
+   
 
-    private void Update()
-    {
+    private void Awake() {
+       
+    }
+    private void OnEnable() {
+        //StartValues
+        _handStartPoint =GetComponent<RectTransform>().position;
+        _handStartLocalEulerAngles = transform.localEulerAngles;
+        //Scale
+        _handStartScale = transform.GetComponent<RectTransform>().sizeDelta;
+     
+
+        _scanningProcesshandObj.GetComponent<RectTransform>().position = _handStartPoint;
+        _scanningProcesshandObj.transform.localEulerAngles = _handStartLocalEulerAngles;
+        
+    }
+    private void Update() {
         UpdateAlphaScanningProcessHandImage(_pageController.ScanProgress);
+
+        _scanningProcesshandObj.GetComponent<RectTransform>().sizeDelta = _handStartScale;
     }
 
-    public void SetScanningProperites(int handIndex)
-    {
+    public void SetScanningProperites(int handIndex) {
 
         _scanningProcesshandObj.GetComponent<Image>().sprite = _hands[handIndex];
 
         // sideModificator = _rightLeftHandRandom[Random.Range(0, _rightLeftHandRandom.Length)];
-        sideModificator = 1;
-        var tmpScale = _scanningProcesshandObj.transform.localScale;
-        tmpScale.x = sideModificator;
-        _scanningProcesshandObj.transform.localScale = tmpScale;
+        //_sideModificator = 1;
+       
+        _scanningProcesshandObj.GetComponent<RectTransform>().sizeDelta = _handStartScale;
 
     }
 
-    public void StartDisplay2Animation(int handIndex)
-    {
+    public void StartDisplay2Animation(int handIndex) {
+
+        Debug.Log("Start Display 2 Animation");
         _handIndex = handIndex;
         _handObject = Instantiate(_handPrefab, transform);
+        _handObject.GetComponent<RectTransform>().localPosition = _handStartPoint;
         _handObject.GetComponent<Image>().sprite = _hands[_handIndex];
         _handObject.GetComponent<Image>().SetNativeSize();
-        var tmpLocalScale = _handObject.transform.localScale;
-        tmpLocalScale.x = sideModificator;
-        _handObject.transform.localScale = tmpLocalScale;
+        var tmpLocalScale = _handStartScale;
+   
+        _handObject.GetComponent<RectTransform>().sizeDelta = tmpLocalScale;
+        tmpLocalScale = _handObject.GetComponent<RectTransform>().localScale; 
+     
+        _handObject.GetComponent<RectTransform>().localScale = tmpLocalScale;
         _handCanvasGroup = _handObject.GetComponent<CanvasGroup>();
         _handCanvasGroup.alpha = 1;
-
-        _handStartScale = _handObject.transform.localScale;
-        _handStartPoint = _handObject.transform.position;
+       
         //Choose Where hand will fly
-
-        switch (_handIndex)
-        {
+        int random = 0;
+        switch (_handIndex) {
             case 0:
-                _handFinishPoint = _blackHandsTransform[Random.Range(0, _blackHandsTransform.Count - 1)];
+                random = Random.Range(0, _blackHandsTransform.Count - 1);
+                _handFinishPoint = _blackHandsTransform[random];
+                _handFinishLocalEulerAngles = _blackHandRotationList[random];
+                _handFinisScale = _blackHandsTransform[random].sizeDelta;
                 break;
             case 1:
-                _handFinishPoint = _redHandsTransform[Random.Range(0, _redHandsTransform.Count - 1)];
+                random = Random.Range(0, _redHandsTransform.Count - 1);
+                _handFinishPoint = _redHandsTransform[random];
+                _handFinishLocalEulerAngles = _redHandsRotationList[random];
+                _handFinisScale = _redHandsTransform[random].sizeDelta;
                 break;
             case 2:
-                _handFinishPoint = _whiteHandsTransform[Random.Range(0, _whiteHandsTransform.Count - 1)];
+                random = Random.Range(0, _whiteHandsTransform.Count - 1);
+                _handFinishPoint = _whiteHandsTransform[random];
+                _handFinishLocalEulerAngles = _whiteHandsRotationList[random];
+                _handFinisScale = _whiteHandsTransform[random].sizeDelta;
                 break;
         }
+
         _tLerp = 0;
         _coroutine = StartCoroutine(MoveHandToOtherHands());
     }
-    private void UpdateAlphaScanningProcessHandImage(float alpha)
-    {
-        if (alpha > 0.15f)
-        {
+    private void UpdateAlphaScanningProcessHandImage(float alpha) {
+        if (alpha > 0.15f) {
             _scanningProcesshandObj.GetComponent<CanvasGroup>().alpha = alpha;
 
-        }
-        else
-        {
+        } else {
             _scanningProcesshandObj.GetComponent<CanvasGroup>().alpha = 0;
         }
 
     }
 
-    private IEnumerator MoveHandToOtherHands()
-    {
+    private IEnumerator MoveHandToOtherHands() {
         _tLerp += Time.fixedDeltaTime * handMoveSpeed;
-        _handObject.transform.position = Vector3.Lerp(_handStartPoint, _handFinishPoint.position, _tLerp);
-        _handObject.transform.localScale = Vector3.Lerp(_handStartScale,
+        _handObject.GetComponent<RectTransform>().position = Vector3.Lerp(_handStartPoint, _handFinishPoint.position, _tLerp);
+        _handObject.GetComponent<RectTransform>().sizeDelta = Vector3.Lerp(_handStartScale, new Vector3(_handFinisScale.x , _handFinisScale.y, _handFinisScale.z), _tLerp);
 
-        new Vector3(_handeFinisScale.x * sideModificator, _handeFinisScale.y, _handeFinisScale.z), _tLerp);
+        _handObject.transform.localEulerAngles = Vector3.Lerp(_handStartLocalEulerAngles,_handFinishLocalEulerAngles, _tLerp*1.1f);
         yield return new WaitForFixedUpdate();
-        if (_tLerp < 1)
-        {
+        if (_tLerp < 1) {
             _coroutine = StartCoroutine(MoveHandToOtherHands());
             Debug.Log("move hand");
-        }
-
-        else
-        {
+        } else {
             StopCoroutine(_coroutine);
             StartCoroutine(StartTimerToDestroyHand(timeToDestroyHand));
         }
 
     }
-    private IEnumerator StartTimerToDestroyHand(float sec)
-    {
+    private IEnumerator StartTimerToDestroyHand(float sec) {
         GameObject tmpObj = _handObject;
         yield return new WaitForSeconds(sec);
         Destroy(tmpObj);

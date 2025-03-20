@@ -19,8 +19,8 @@ public class PageController : MonoBehaviour
     private ScanButton _scanButton;
     [Header("Display 2 Properies")]
     //[SerializeField] private Animator _Display2Animation;//пока условно
-    [Inject]
-    [SerializeField] private Display2AnimationController _Display2AnimController;
+    
+    [SerializeField] private List<Display2AnimationController> _display2AnimControllerList;
     private int _choosedColor;
 
     private void Update()
@@ -39,7 +39,8 @@ public class PageController : MonoBehaviour
             _choosedColor = index;
             _scanRightHandImage.sprite = _scanCircles[_choosedColor];
             _scanLeftHandImage.sprite = _scanRightHandImage.sprite;
-            _Display2AnimController.SetScanningProperites(_choosedColor);
+            foreach(Display2AnimationController controller in _display2AnimControllerList)
+                controller.SetScanningProperites(_choosedColor);
             _scanButton.SetHandsColor(index);
         }
 
@@ -60,7 +61,8 @@ public class PageController : MonoBehaviour
     [ContextMenu("Start Display 2 Animation")]
     public async void StartDisplay2Animation()
     {
-        _Display2AnimController.StartDisplay2Animation(_choosedColor);
+        foreach (Display2AnimationController controller in _display2AnimControllerList)
+            controller.StartDisplay2Animation(_choosedColor);
         await Task.Delay(_restartAfter * 1000);
         _scanButton.SetCanScanTrue();
         OpenChoseColorPage();

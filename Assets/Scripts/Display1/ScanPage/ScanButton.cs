@@ -3,8 +3,7 @@ using UnityEngine.EventSystems;
 using Zenject;
 using UnityEngine.UI;
 using System.Collections.Generic;
-public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandler
-{
+public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandler, IPointerEnterHandler{
     public bool SecondHandIsKeepTouching;
     public float LerpValue { get { return _lerpValue; } }
     public bool CanScan { get { return _canScan; } }
@@ -14,10 +13,13 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     [SerializeField] private GameObject _leftHand;
     [SerializeField] private GameObject _rightHand;
     [SerializeField] private List<Animator> _animators;
+    [SerializeField] private ContDownAnimationHandler _contDownAnimationHandler;
 
+    [Space(5)]
     bool _canScan = true;
     private float _lerpValueModifier = -1;
-    public float _lerpValue;
+
+    public float _lerpValue=0;
     private float _previousLerpValue;
     public bool FirstHandIsKeepTouching{ get { return _firstHandIsKeepTouching; } }
     private bool _firstHandIsKeepTouching=false;
@@ -26,9 +28,22 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
         foreach (var anim in _animators)
             anim.speed = _gameConfig.ScanAnimationSpeed;
     }
+ 
+    private void OnEnable() {
+        _lerpValueModifier = -1;
+        _canScan = true;
+        SecondHandIsKeepTouching = false;
+        _firstHandIsKeepTouching = false;
+    }
+    private void OnDisable() {
+        _lerpValueModifier = -1;
+        _canScan = true;
+        SecondHandIsKeepTouching = false;
+        _firstHandIsKeepTouching = false;
+    }
     private void Update()
     {
-
+        
         UpdateLerpValue();
         UpdateHandsAplha();
 
@@ -49,16 +64,24 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
                 anim.SetBool("IsScanning", true);
 
             PlusTModifier();
+          
         }
     }
     public void OnPointerExit(PointerEventData eventData)
     {
-        _firstHandIsKeepTouching = false;
-        foreach (var anim in _animators)
-            anim.SetBool("IsScanning", false);
-        MinusTModifier();
+        //_firstHandIsKeepTouching = false;
+        //foreach (var anim in _animators)
+        //    anim.SetBool("IsScanning", false);
+        //MinusTModifier();
+    }
+    public void OnPointerEnter(PointerEventData eventData) {
+        //_firstHandIsKeepTouching = true;
+        //if (_canScan) {
+        //    foreach (var anim in _animators)
+        //        anim.SetBool("IsScanning", true);
 
-
+        //    PlusTModifier();
+        //}
     }
     public void SetCanScanTrue()
     {
@@ -66,6 +89,7 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     }
     public void StartDisplay2Animation()
     {
+
         _lerpValue = 0;
         _canScan = false;
         foreach (var anim in _animators)
@@ -76,8 +100,14 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
     }
     private void UpdateLerpValue()
     {
-        if (_lerpValue >= 0.05f && _lerpValue <= 1f && CanScan)
+        
+        if (_lerpValue <= 1f && CanScan) {
             _lerpValue += _lerpValueModifier * Time.deltaTime * _gameConfig.ScanSpeed;
+            
+        }
+        if (_lerpValue <= 0)
+            _lerpValue = 0;
+        
     }
     private void UpdateHandsAplha()
     {
@@ -110,7 +140,9 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
         {
             if (_canScan)
             {
-                _lerpValue = 0.05f;
+                if(_lerpValueModifier<0)
+                    _contDownAnimationHandler.StartCountDown();
+                //_lerpValue = 0.05f;
                 _lerpValueModifier = 1;
             }
         }
@@ -119,12 +151,14 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
      }
     public void TryScan()
     {
+     
         if (_canScan)
         {
             foreach (var anim in _animators)
                 anim.SetBool("IsScanning", true);
 
             PlusTModifier();
+            
         }
     }
     public void DonstScan()
@@ -134,6 +168,5 @@ public class ScanButton : MonoBehaviour, IPointerExitHandler, IPointerDownHandle
         MinusTModifier();
     }
 
-
-
+  
 }
